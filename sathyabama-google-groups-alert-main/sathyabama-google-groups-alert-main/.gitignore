@@ -1,0 +1,11 @@
+.env
+venv/
+__pycache__/
+*.pyc
+data/chrome_profile/
+data/*.db
+data/google_auth.json
+logs/
+.playwright/
+data/
+

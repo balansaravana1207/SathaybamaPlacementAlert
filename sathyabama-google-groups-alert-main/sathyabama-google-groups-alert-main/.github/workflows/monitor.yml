@@ -1,0 +1,53 @@
+name: Sathyabama Placement Monitor
+
+on:
+  schedule:
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sathyabama-placement-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore Google authentication
+        env:
+          GOOGLE_AUTH_JSON: ${{ secrets.GOOGLE_AUTH_JSON }}
+        run: |
+          mkdir -p data
+          printf '%s' "$GOOGLE_AUTH_JSON" > data/google_auth.json
+
+      - name: Restore message database
+        uses: actions/cache/restore@v4
+        with:
+          path: data/messages.db
+          key: sathyabama-messages-${{ github.run_id }}
+          restore-keys: |
+            sathyabama-messages-
+
+      - name: Run placement monitor
+        run: python -m src.monitor.message_detector
+
+      - name: Save message database
+        uses: actions/cache/save@v4
+        with:
+          path: data/messages.db
+          key: sathyabama-messages-${{ github.run_id }}
